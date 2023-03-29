@@ -27,7 +27,7 @@ import (
 	"net"
 
 	"google.golang.org/grpc"
-	pb "google.golang.org/grpc/examples/myauth/myauth"
+	pb "github.com/myproject/myauth"
 )
 
 var (
@@ -40,7 +40,7 @@ type server struct {
 }
 
 // AuthChecker implements myauth.GreeterServer
-func (s *server) AuthChecker(ctx context.Context, in *pb.AuthRequest) (*pb.AuthReply, error) {
+func (s *server) CheckAuth(ctx context.Context, in *pb.AuthRequest) (*pb.AuthReply, error) {
 	var users map[string] bool
 	users = make(map[string] bool)
 	users["Dasha"] = true

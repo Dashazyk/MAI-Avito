@@ -1,7 +1,15 @@
-from flask import Flask, request
+from flask import Flask, request, abort
 import requests
 import json
 import os
+import grpc
+import sys 
+
+sys.path.append(os.path.split(os.path.realpath(sys.argv[0]))[0] + '/myauth')
+print(sys.path)
+
+import myauth.myauth_pb2 as ma
+import myauth.myauth_pb2_grpc as ma_grpc
 
 class WeatherServer():
     def __init__(self, url_template, api_key) -> None:
@@ -11,16 +19,16 @@ class WeatherServer():
         self.url_t = url_template
         self.api_key = api_key
 
-        @api.route('/', methods=['GET'])
         def first_page():
-            return 'hello, my little penguineee'
+            return 'go to /weather'
 
         @api.route('/weather', methods=['GET'])
         def weather():
             city = request.args.get('city', None)
             days = request.args.get('days', None)
+            unam = request.headers.get('Own-Auth-UserName', None)
             if city:
-                return self.weather(city, days)
+                return self.weather(city, days, unam)
             else:
                 return {}
             
@@ -28,27 +36,35 @@ class WeatherServer():
     def run(self):
         self.api.run(host='0.0.0.0', port = os.environ.get('WEATHER_PORT', 8080))
 
-    def weather(self, city, days):
-        request_url = url.format(
-            key = weatherapi_key, 
-            city = city,
-            days = days
-        )
+    def weather(self, city, days, username):
+        with grpc.insecure_channel('localhost:50051') as channel:
+            stub = ma_grpc.AuthCheckerStub(channel)
+            response = stub.CheckAuth(ma.AuthRequest(name=username))
+            print("can view: " + str(response.can_view))
 
-        response = requests.get(request_url)
-        j_sponse = json.loads(response.text)
+        if response.can_view:
+            request_url = url.format(
+                key = weatherapi_key, 
+                city = city,
+                days = days
+            )
 
-        if not days:
-            temp_c = j_sponse['current']['temp_c']
+            response = requests.get(request_url)
+            j_sponse = json.loads(response.text)
+
+            if not days:
+                temp_c = j_sponse['current']['temp_c']
+            else:
+                last_day = j_sponse['forecast']['forecastday'][-1]['day']
+                temp_c   = last_day['avgtemp_c']
+
+            return {
+                'city': city,
+                'unit': 'celsius',
+                'temperature':int(temp_c)
+            }
         else:
-            last_day = j_sponse['forecast']['forecastday'][-1]['day']
-            temp_c = last_day['avgtemp_c']
-
-        return {
-            'city': city,
-            'unit': 'celsius',
-            'temperature':int(temp_c)
-        }
+            abort(403)
 
         
 if __name__ == '__main__':

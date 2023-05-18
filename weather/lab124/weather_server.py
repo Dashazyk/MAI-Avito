@@ -85,7 +85,7 @@ class WeatherServer():
             city = request.args.get('city', None)
             days = request.args.get('days', None)
             
-            date = datetime.datetime.today() + datetime.timedelta(days=days if days else 0)
+            date = datetime.datetime.today() + datetime.datetime.timedelta(days=days if days else 0)
 
             unam = request.headers.get('Own-Auth-UserName', None)
             self.myredis.set(str(city)+str(date), request.data)

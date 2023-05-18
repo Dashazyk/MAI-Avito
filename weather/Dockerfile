@@ -10,10 +10,18 @@ RUN python3 -m pip install flask
 RUN python3 -m pip install requests
 RUN python3 -m pip install grpcio
 RUN python3 -m pip install grpcio-tools
+RUN python3 -m pip install redis
+RUN python3 -m pip install redis-py-cluster
 
+RUN rm -rf /etc/myserver/lab124
 RUN mkdir -p /etc/myserver/lab124
 COPY lab124/. /etc/myserver/lab124
 EXPOSE 8080
+
+EXPOSE 80
+EXPOSE 443
+
+WORKDIR /etc/myserver/lab124/
 
 CMD ["sh", "-c", "/etc/myserver/lab124/start_script.sh"]
 #CMD ["sh", "-c", "/etc/myserver/lab124/myserver &"]

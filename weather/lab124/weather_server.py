@@ -69,7 +69,12 @@ class WeatherServer():
             if city:
                 date = datetime.datetime.today() + datetime.timedelta(days=days if days else 0)
                 print('getting from redis by:', str(city)+str(date))
-                redised = self.myredis.get(str(city)+str(date))
+                redised = None
+                try:
+                    redised = self.myredis.get(str(city)+str(date))
+                except Exception as e:
+                    print('E:', e)
+                    
                 if redised:
                     print('from redis')
                     return redised
@@ -85,7 +90,7 @@ class WeatherServer():
             city = request.args.get('city', None)
             days = request.args.get('days', None)
             
-            date = datetime.datetime.today() + datetime.datetime.timedelta(days=days if days else 0)
+            date = datetime.datetime.today() + datetime.timedelta(days=days if days else 0)
 
             unam = request.headers.get('Own-Auth-UserName', None)
             self.myredis.set(str(city)+str(date), request.data)
